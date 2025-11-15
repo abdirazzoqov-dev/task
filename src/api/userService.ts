@@ -12,7 +12,7 @@ const store = localforage.createInstance({
 export const createUser = async (userData: Omit<User, 'id' | 'createdAt'>): Promise<User> => {
   const newUser: User = {
     ...userData,
-    id: Date.now().toString(), // Vaqt belgisidan oddiy ID yaratish
+    id: Date.now().toString(), 
     createdAt: Date.now(),
   };
   await store.setItem(newUser.id, newUser);
@@ -25,7 +25,7 @@ export const getUsers = async (): Promise<User[]> => {
   await store.iterate<User, any>((value) => {
     users.push(value);
   });
-  // Eng yangi foydalanuvchilar yuqorida turishi uchun saralash
+  // Saralash: Eng yangi foydalanuvchilar yuqorida
   return users.sort((a, b) => b.createdAt - a.createdAt); 
 };
 

@@ -1,7 +1,5 @@
 // src/types/User.ts
-
-export type Gender = 'Female' | 'Male' | 'Others';
-
+export type Gender = 'Male' | 'Female' | 'Other';
 export interface User {
   id: string; 
   firstName: string;
@@ -9,4 +7,9 @@ export interface User {
   birthdate: string; 
   gender: Gender;
   createdAt: number; 
+}
+export interface MapPolygon {
+  id: string;
+  coords: { lat: number; lng: number }[];
+  createdAt: number;
 }

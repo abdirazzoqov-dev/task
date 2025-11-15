@@ -1,7 +1,7 @@
-// src/store/userStore.ts
+// src/data-config/userStore.ts
 import { create } from 'zustand';
 import type { User } from '../types/User';
-import * as userService from '../api/userService'; // Service qatlamini import qilish
+import * as userService from './userService';
 
 interface UserState {
   users: User[];
@@ -10,10 +10,10 @@ interface UserState {
   fetchUsers: () => Promise<void>;
   addUser: (data: Omit<User, 'id' | 'createdAt'>) => Promise<void>;
   editUser: (user: User) => Promise<void>;
-  removeUser: (id: string, reason: string) => Promise<void>; // Delete modal talabini hisobga olamiz
+  removeUser: (id: string, reason: string) => Promise<void>;
 }
 
-export const useUserStore = create<UserState>((set, get) => ({
+export const useUserStore = create<UserState>((set) => ({
   users: [],
   isLoading: false,
   error: null,
@@ -32,13 +32,10 @@ export const useUserStore = create<UserState>((set, get) => ({
     set({ isLoading: true });
     try {
       const newUser = await userService.createUser(data);
-      // IndexedDB yangilangach, store ni ham yangilaymiz
-      set((state) => ({ 
-        users: [newUser, ...state.users], 
-        isLoading: false 
-      }));
+      set((state) => ({ users: [newUser, ...state.users], isLoading: false }));
     } catch (err) {
-      set({ error: "Foydalanuvchini qo'shishda xatolik yuz berdi.", isLoading: false });
+      set({ error: "Qo'shishda xatolik.", isLoading: false });
+      throw new Error("Qo'shishda xatolik.");
     }
   },
 
@@ -51,22 +48,20 @@ export const useUserStore = create<UserState>((set, get) => ({
         isLoading: false,
       }));
     } catch (err) {
-      set({ error: "Foydalanuvchini tahrirlashda xatolik yuz berdi.", isLoading: false });
+      set({ error: "Tahrirlashda xatolik.", isLoading: false });
+      throw new Error("Tahrirlashda xatolik.");
     }
   },
 
   removeUser: async (id, reason) => {
-    // Esda tuting: 'reason' faqat serverga/logga yuborilishi kerak.
-    console.log(`Foydalanuvchi o'chirildi. Sababi: ${reason}`); 
     set({ isLoading: true });
     try {
       await userService.deleteUser(id);
-      set((state) => ({
-        users: state.users.filter((u) => u.id !== id),
-        isLoading: false,
-      }));
+      set((state) => ({ users: state.users.filter((u) => u.id !== id), isLoading: false }));
+      console.log(`Foydalanuvchi o'chirildi. Sababi: ${reason}`); 
     } catch (err) {
-      set({ error: "Foydalanuvchini o'chirishda xatolik yuz berdi.", isLoading: false });
+      set({ error: "O'chirishda xatolik.", isLoading: false });
+      throw new Error("O'chirishda xatolik.");
     }
   },
 }));
