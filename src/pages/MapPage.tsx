@@ -1,6 +1,6 @@
 // src/pages/MapPage.tsx
 import React, { useState } from 'react';
-import Map, { NavigationControl, GeolocateControl } from 'react-map-gl';
+import Map, { NavigationControl, GeolocateControl, RequestTransformFunction } from 'react-map-gl';
 import { MapDrawControlComponent } from '../components/custom/MapDrawControl';
 import maplibregl from 'maplibre-gl';
 
@@ -13,31 +13,16 @@ const initialViewState = {
   pitch: 0,
 };
 
-// MapLibre'ni Mapbox telemetriyasiz ishlatish uchun Map komponentini sozlash
-const MapComponent = (props: any) => {
-    // Mapbox GL Draw ning Mapbox API ga ulanishini oldini olamiz
-    const MapboxTokenBypass = {
-        ...maplibregl,
-        setRTLTextPlugin: (url: string, callback: any) => { /* do nothing */ }, 
-        // Tokensiz Stadia Maps serveriga yo'naltiramiz
-        baseApiUrl: 'https://tiles.stadiamaps.com', 
-    };
-
-    return <Map {...props} mapLib={MapboxTokenBypass} />;
-};
-
-
 export const MapPage: React.FC = () => {
   const [viewState, setViewState] = useState(initialViewState);
   
-  // Ishonchli, tokensiz Stadia Maps stil URL'i
-  const MAP_STYLE_URL = "https://tiles.stadiamaps.com/styles/osm_bright.json";
-  
+  // API kaliti talab qilmaydigan Maptiler xarita stili
+  const MAP_STYLE_URL = "https://api.maptiler.com/maps/streets/style.json?key=get_your_own_OpIi9ZULNHzrESv6T2vL";
+
   return (
     <div className="p-4 h-[80vh]">
       <h2 className="text-2xl font-semibold mb-4">📍 Xaritada Polygon Chizish (MapLibre)</h2>
-      
-      <MapComponent
+      <Map
         {...viewState}
         style={{ 
             width: '100%', 
@@ -48,6 +33,7 @@ export const MapPage: React.FC = () => {
         }}
         onMove={evt => setViewState(evt.viewState)}
         mapStyle={MAP_STYLE_URL} 
+        mapLib={maplibregl}        
         maxZoom={20}
         minZoom={0}
         
@@ -59,17 +45,18 @@ export const MapPage: React.FC = () => {
         {/* Navigatsiya va joylashuv kontrollarini qo'shish */}
         <NavigationControl position="top-right" />
         
-        {/* GeolocateControl: Avtomatik kuzatishni o'chiramiz */}
+        {/* GeolocateControl: Foydalanuvchi joylashuvini jonli kuzatishni yoqish */}
         <GeolocateControl 
           position="top-right" 
           showUserLocation={true} 
-          trackUserLocation={false} 
+          trackUserLocation={true} 
+          positionOptions={{ enableHighAccuracy: true }}
         />
         
         {/* Polygon chizish uchun maxsus boshqaruv paneli */}
         <MapDrawControlComponent />
         
-      </MapComponent>
+      </Map>
     </div>
   );
 };
