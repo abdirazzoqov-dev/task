@@ -23,11 +23,10 @@ function MapDrawControl() {
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawInstance, setDrawInstance] = useState<MapboxDraw | null>(null);
 
-  useControl(() => {
+  const drawControl = useControl<MapboxDraw>(() => {
     const draw = new MapboxDraw({
       displayControlsDefault: false,
       controls: {}, 
-      styles: [], 
     });
     setDrawInstance(draw);
     return draw;
@@ -37,12 +36,14 @@ function MapDrawControl() {
 
   const handleSavePolygon = useCallback(() => {
     const allFeatures = drawInstance?.getAll();
-    if (!allFeatures || allFeatures.features.length === 0) return;
+    if (!allFeatures || allFeatures.features.length === 0) {
+      console.log("Saqlash uchun poligon topilmadi.");
+      return;
+    }
 
-    const polygonFeature = allFeatures.features[allFeatures.features.length - 1] as unknown as Polygon;
-    
-    if (polygonFeature.geometry.type === 'Polygon') {
-      const coordinates = polygonFeature.geometry.coordinates[0].map(coord => ({
+    allFeatures.features.forEach(feature => {
+      if (feature.geometry.type === 'Polygon') {
+        const coordinates = (feature.geometry.coordinates[0] as number[][]).map(coord => ({
         lat: coord[1],
         lng: coord[0],
       }));
@@ -50,36 +51,36 @@ function MapDrawControl() {
       userService.createPolygon(coordinates)
         .then(() => console.log("Polygon MapLibre yordamida saqlandi!"))
         .catch(err => console.error("Polygon saqlashda xato:", err));
-    }
-    
-    drawInstance?.changeMode('simple_select');
-    setIsDrawing(false);
+      }
+    });
   }, [drawInstance]);
 
   React.useEffect(() => {
     if (!map || !drawInstance) return;
 
-    const onDrawCreate = (e: any) => { handleSavePolygon(); };
-    const onModeChange = () => { setIsDrawing(drawInstance.getMode().startsWith('draw')); };
+    const onDrawCreate = () => {
+      // Chizish tugagandan so'ng saqlash va rejimni o'zgartirish
+      handleSavePolygon();
+      setIsDrawing(false);
+      drawInstance.changeMode('simple_select');
+    };
+    const onModeChange = (e: { mode: string }) => {
+      setIsDrawing(e.mode.startsWith('draw'));
+    };
 
     map.on('draw.create', onDrawCreate);
     map.on('draw.modechange', onModeChange);
     
-    // Cleanup: to'liq tozalash uchun
     return () => {
       map.off('draw.create', onDrawCreate);
       map.off('draw.modechange', onModeChange);
-      // MapboxDraw'ni xarita konteyneridan majburiy o'chiramiz
-      if (map.getContainer().contains(drawInstance.container)) {
-          map.removeControl(drawInstance);
-      }
     };
   }, [map, drawInstance, handleSavePolygon]);
   
   // Custom UI funksiyalari
   const startDrawing = () => { drawInstance?.changeMode('draw_polygon'); setIsDrawing(true); };
-  const finishDrawing = () => { drawInstance?.changeMode('simple_select'); };
-  const startOver = () => { drawInstance?.deleteAll(); drawInstance?.changeMode('simple_select'); setIsDrawing(false); };
+  const finishDrawing = () => { handleSavePolygon(); drawInstance?.changeMode('simple_select'); setIsDrawing(false); };
+  const startOver = () => { drawInstance?.deleteAll(); setIsDrawing(false); };
   const cancelDrawing = () => { drawInstance?.changeMode('simple_select'); setIsDrawing(false); };
   const toggleSelectMode = () => { drawInstance?.changeMode('simple_select'); };
 
